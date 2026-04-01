@@ -13,7 +13,7 @@ class Registry:
 
     def initialize(self, ctx: Context):
         self.ctx = ctx
-        self.logger().info(f"Registry initialized in {ctx.env} mode.")
+        self.logger().info(f"Registry initialized.")
 
     def add(self, name, cls, metadata):
         if name in self._strategies:

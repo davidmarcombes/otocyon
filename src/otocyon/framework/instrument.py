@@ -27,6 +27,8 @@ class BaseInstrument(ABC):
 
     @property
     def price(self) -> float:
+        if self._df is None:
+            raise ValueError("Data not collected yet. Call _collect() first.")
         return self._df["close"][self._cursor]
 
     @abstractmethod

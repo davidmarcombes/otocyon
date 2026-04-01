@@ -5,7 +5,7 @@ from ..context import Context
 
 
 @dataclass(frozen=True)
-class SwapSpecs(BaseSpec):
+class SwapSpec(BaseSpec):
     notional: float
     fixed_rate: float
     float_index: str  # e.g., "SOFR"
@@ -14,7 +14,7 @@ class SwapSpecs(BaseSpec):
 
 
 class SwapInstrument(BaseInstrument):
-    def __init__(self, specs: SwapSpecs, data: pl.LazyFrame, ctx: Context):
+    def __init__(self, specs: SwapSpec, data: pl.LazyFrame, ctx: Context):
         super().__init__(specs.symbol, data, ctx)
         self.specs = specs
 

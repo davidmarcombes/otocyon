@@ -7,8 +7,6 @@ def test_context_creation():
     
     assert ctx.logger == logger
     assert ctx.data_root == "/tmp/data"
-    assert ctx.env == "research"
-    assert ctx.timezone == "UTC"
     assert ctx.metadata == {}
 
 def test_context_metadata():
@@ -26,4 +24,8 @@ def test_context_immutability():
     ctx = Context(logger=logger, data_root="/tmp/data")
     
     with pytest.raises(AttributeError):
-        ctx.env = "production"
+        # Ignore linter warning about setting an attribute on a frozen dataclass
+        # The test is specifically checking that this raises an error, so we want to do it anyway
+        ctx.config_file = "config.yaml" # type: ignore
+
+
