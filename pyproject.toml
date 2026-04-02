@@ -8,6 +8,8 @@ dependencies = [
     "duckdb>=1.5.1",
     "polars>=1.39.3",
     "ruamel-yaml>=0.19.1",
+    "numpy",
+    "pyarrow>=23.0.1",
 ]
 
 [dependency-groups]

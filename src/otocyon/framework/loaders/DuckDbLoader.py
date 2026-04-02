@@ -1,6 +1,3 @@
-from typing import Any
-from pathlib import Path
-import duckdb
 import polars
 from ..loader import BaseLoader
 from ..instrument import BaseSpec
@@ -12,14 +9,13 @@ class DuckDBLoader(BaseLoader):
         super().__init__(spec, ctx)
 
     def load(self) -> polars.DataFrame:
-        self.logger().debug(f"DuckDB querying symbol: {self.spec.symbol}")
+        path = f"{self.ctx.data_root}/{self.spec.asset_class}/{self.spec.symbol}.parquet"
+        self.logger().debug(f"DuckDB scanning: {path}")
 
-        # We use a parameterized query for safety and speed
+        # SQL calculation: daily returns via window function
         query = """
-            SELECT * FROM market_data 
-            WHERE symbol = ? 
+            SELECT *, 
+                   (close - lag(close) OVER (ORDER BY timestamp)) / lag(close) OVER (ORDER BY timestamp) as returns
+            FROM read_parquet(?)
         """
-
-        # .pl() is the magic method that turns a DuckDB result
-        # into a Polars DataFrame without copying memory.
-        return self.ctx.duckdb_connection.execute(query, [self.spec.symbol]).pl()
+        return self.ctx.duckdb_connection.execute(query, [path]).pl()

@@ -1,44 +1,52 @@
+import polars as pl
 from ..framework import (
-    NO_LOGGER,
-    strategy, on_data, on_setup,
-    InstrumentFactory,
-    CryptoSpec,  
+    strategy,
+    on_data,
+    on_indicator,
+    CryptoSpec,
+    EquitySpec,
+    Indicator,
+    Signal,
 )
+from typing import Dict
 
-@strategy("BTC-ETH-TrendFollower", universe=["BTC-USDT", "ETH-USDT"])
+
+@strategy(
+    "BTC-ETH-TrendFollower",
+    universe={
+        "btc": CryptoSpec(symbol="BTC-USDT"),
+        "eth": CryptoSpec(symbol="ETH-USDT"),
+        "aapl": EquitySpec(symbol="AAPL"),
+        "msft": EquitySpec(symbol="MSFT"),
+    },
+)
 class TrendFollower:
     def __init__(self, ctx):
         self.ctx = ctx
         self.lookback = 20
-        self.btc = None
-        self.eth = None
-        
-    def logger(self):
-        return self.ctx.logger if (self.ctx and self.ctx.logger) else NO_LOGGER 
-        
-    @on_setup()
-    def setup(self):
-        """
-        This method is called once at the start. You can initialize state here.
-        """
-        self.logger().info("Setting up BTC ETH TrendFollower strategy.")
-        factory = InstrumentFactory(self.ctx)
-        self.btc = factory.create(CryptoSpec(symbol="BTC-USDT"))
-        self.eth = factory.create(CryptoSpec(symbol="ETH-USDT"))
 
     @on_data()
     def handle_market_data(self):
-        """
-        This method is discovered by the Runner because of the decorator.
-        """
-        if self.btc is None or self.eth is None:
-            raise ValueError("Instruments not initialized. Did you forget to call setup()?")
+        # 1. BTC: Uses the Polars load-time plan for 'ma_5'
+        # 2. AAPL: Uses pre-calculated 'ma_20' from Parquet file
+        # 3. MSFT: Uses DuckDB SQL-calculated 'returns'
+        # 4. ETH: Demonstrates lazy on-the-fly calculation
         
-        btc_price = self.btc.price
-        eth_price = self.eth.price
-        
-        self.logger().info(f"BTC Price: {btc_price}, ETH Price: {eth_price}")   
-        
-        # TODO: Implement your trend-following logic here. 
-        
-        # TODO: Emit signal
+        yield [
+            Indicator("BTC-MA5", self.btc.get_stat("ma_5"), "BTC-USDT"),
+            Indicator("AAPL-MA20", self.aapl.get_stat("ma_20"), "AAPL"),
+            Indicator("MSFT-Ret", self.msft.get_stat("returns"), "MSFT"),
+            Indicator("ETH-Mom", self.eth.get_stat("mom", pl.col("close") / pl.col("close").shift(1)), "ETH-USDT")
+        ]
+
+    @on_indicator()
+    def handle_indicator(self, indicators: Dict[str, Indicator]):
+
+        btc_ma = indicators["BTC-MA5"]
+        eth_mom = indicators["ETH-Mom"]
+
+        # Noddy logic using mixed sources
+        if btc_ma.value > 100 and eth_mom.value > 1.01:
+            yield Signal("BTC-USDT", weight=1.0, side="LONG")
+        else:
+            yield Signal("ETH-USDT", weight=1.0, side="LONG")

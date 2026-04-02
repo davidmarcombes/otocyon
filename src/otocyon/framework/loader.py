@@ -1,20 +1,21 @@
 from abc import ABC, abstractmethod
-from typing import Any
-import polars
+from typing import Any, TYPE_CHECKING
+import polars as pl
 
-from .logger import NO_LOGGER
-from .instrument import BaseSpec
-from .context import Context
+if TYPE_CHECKING:
+    from .instrument import BaseSpec
+
 
 class BaseLoader(ABC):
-    def __init__(self, spec: BaseSpec, ctx: Context):
+    def __init__(self, spec: "BaseSpec", ctx: Any):
         self.spec = spec
         self.ctx = ctx
 
     def logger(self):
-        return self.ctx.logger if (self.ctx and self.ctx.logger) else NO_LOGGER
+        # We assume ctx has a logger or we use NO_LOGGER
+        return getattr(self.ctx, "logger", None)
 
     @abstractmethod
-    def load(self) -> polars.DataFrame:
+    def load(self) -> pl.DataFrame:
         """Fetch data for a specific window and return a Polars DataFrame."""
         pass

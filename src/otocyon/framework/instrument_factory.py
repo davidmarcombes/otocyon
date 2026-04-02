@@ -1,10 +1,9 @@
-from typing import Optional, Union, Dict, Type
-import polars as pl
+from typing import Optional, Dict, Type
 
 from .context import Context
-from .instrument import BaseInstrument, BaseSpec
-from .instruments.swap_instrument import SwapSpecs, SwapInstrument
-from .instruments.equity_insturment import EquityInstrument
+from .instrument import BaseInstrument, BaseSpec, BaseLoader
+from .instruments.swap_instrument import SwapInstrument
+from .instruments.equity_instrument import EquityInstrument
 from .instruments.crypto_instrument import CryptoInstrument
 from .logger import NO_LOGGER
 
@@ -12,6 +11,7 @@ from .logger import NO_LOGGER
 class InstrumentFactory:
     def __init__(self, ctx: Context):
         self.ctx = ctx
+        self._cache: Dict[str, BaseInstrument] = {}
         self._type_map: Dict[str, Type[BaseInstrument]] = {
             "equity": EquityInstrument,
             "crypto": CryptoInstrument,
@@ -25,19 +25,23 @@ class InstrumentFactory:
     def create(
         self,
         specs: BaseSpec,
-        plan: Optional[pl.LazyFrame] = None,
+        loader: Optional[BaseLoader] = None,
     ) -> BaseInstrument:
-        """
-        Create an instrument using the factory's internal context.
-        """
+        if specs.symbol in self._cache:
+            return self._cache[specs.symbol]
+
         self.logger().debug(f"Factory synthesizing: {specs.symbol}")
 
-        # 1. Resolve the Class
+        # If loader is not provided, try to discover it through the market
+        if loader is None:
+            loader = self.ctx.market.get_loader(specs, self.ctx)
+
         klass = self._type_map.get(specs.asset_class, BaseInstrument)
+        instr = klass(specs, loader, self.ctx)
 
-        # 2. Build plan
-        if plan is None:
-            # Todo : build the plan from name or spec
-            pass
+        # Call collect() automatically if we have a loader
+        if loader is not None:
+            instr._collect()
 
-        return klass(specs, plan, self.ctx)
+        self._cache[specs.symbol] = instr
+        return instr

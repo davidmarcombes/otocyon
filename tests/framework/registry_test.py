@@ -1,4 +1,3 @@
-import pytest
 from otocyon.framework import REGISTRY, strategy
 
 def test_strategy_registration():
@@ -15,10 +14,12 @@ def test_strategy_registration():
 
 def test_registry_overwrite():
     @strategy("OverwriteMe")
-    class Version1: version = 1
+    class Version1:
+        version = 1
 
     @strategy("OverwriteMe")
-    class Version2: version = 2
+    class Version2:
+        version = 2
 
     reg = REGISTRY.get_all()
     assert reg["OverwriteMe"]["class"].version == 2

@@ -14,10 +14,26 @@ class Context:
     """
     
     logger: logging.Logger = NO_LOGGER # Common logger
-    data_root: str = "/data"  # Root data directory
+    data_root: str = "data"  # Root data directory
     duckdb_path: str = ":memory:"  # Default to in-memory DuckDB
     config_file: str = "config.yaml"  # Path to config file
     metadata: dict = field(default_factory=dict)
+    instruments: Dict[str, Any] = field(default_factory=dict)
+    
+    @cached_property
+    def portfolio(self):
+        from .portfolio import Portfolio
+        return Portfolio(ctx=self)
+
+    @cached_property
+    def factory(self):
+        from .instrument_factory import InstrumentFactory
+        return InstrumentFactory(self)
+
+    @cached_property
+    def market(self):
+        from .market import Market
+        return Market()
 
     @cached_property
     def duckdb_connection(self) -> duckdb.DuckDBPyConnection:

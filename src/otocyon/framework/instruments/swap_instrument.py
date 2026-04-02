@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-import polars as pl
-from ..instrument import BaseInstrument, BaseSpec
+from typing import Optional
+from ..instrument import BaseInstrument, BaseSpec, BaseLoader
 from ..context import Context
 
 
@@ -14,8 +14,8 @@ class SwapSpec(BaseSpec):
 
 
 class SwapInstrument(BaseInstrument):
-    def __init__(self, specs: SwapSpec, data: pl.LazyFrame, ctx: Context):
-        super().__init__(specs.symbol, data, ctx)
+    def __init__(self, specs: SwapSpec, loader: Optional[BaseLoader], ctx: Context):
+        super().__init__(specs, loader, ctx)
         self.specs = specs
 
     def get_type(self) -> str:
