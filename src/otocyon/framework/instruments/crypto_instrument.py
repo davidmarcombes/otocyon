@@ -4,10 +4,20 @@ from ..instrument import BaseInstrument, BaseSpec
 
 @dataclass(frozen=True)
 class CryptoSpec(BaseSpec):
-    # We hardcode the asset_class for this subclass
+    """
+    Specification for a crypto instrument.
+    """
+
     asset_class: str = "crypto"
 
 
 class CryptoInstrument(BaseInstrument):
+    """
+    Instrument for a crypto asset.
+    """
+
     def get_type(self):
+        """
+        Returns the type of the instrument.
+        """
         return "crypto"

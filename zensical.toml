@@ -1,0 +1,16 @@
+[project]
+site_name = "Otocyon"
+site_url = "https://marcombes.fr/otocyon"
+docs_dir = "docs"
+
+[project.theme]
+variant = "modern" 
+
+[project.plugins.mkdocstrings.handlers.python]
+# This tells the Python 'Griffe' collector to look in the src folder
+paths = ["src"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "google"
+show_source = true
+show_if_no_docstring = false # Switch to TRUE for debugging!

@@ -3,18 +3,33 @@ import polars as pl
 from typing import Any, Optional
 from dataclasses import dataclass
 from .loader import BaseLoader
+from .context import Context
 
 
 @dataclass(frozen=True)
 class BaseSpec:
-    """Base interface for all instrument specifications."""
+    """
+    Base interface for all instrument specifications.
+    """
 
     symbol: str
     asset_class: str
 
 
 class BaseInstrument(ABC):
-    def __init__(self, spec: BaseSpec, loader: Optional[BaseLoader], ctx: Any):
+    """
+    Base interface for all instruments.
+    """
+
+    def __init__(self, spec: BaseSpec, loader: Optional[BaseLoader], ctx: Context):
+        """
+        Initialize the instrument.
+
+        Args:
+            spec: The instrument specification.
+            loader: The loader.
+            ctx: The context.
+        """
         self.spec = spec
         self.symbol = spec.symbol
         self._loader = loader
@@ -43,7 +58,7 @@ class BaseInstrument(ABC):
 
     def get_stat(self, name: str, expr: Optional[pl.Expr] = None) -> Any:
         """
-        Retrieves a stat. If not present and expr is provided, calculates it lazily 
+        Retrieves a stat. If not present and expr is provided, calculates it lazily
         and caches it in the internal dataframe.
         """
         if self._df is None:
@@ -51,8 +66,10 @@ class BaseInstrument(ABC):
 
         if name not in self._df.columns:
             if expr is None:
-                raise ValueError(f"Stat '{name}' not found and no expression provided for calculation.")
-            
+                raise ValueError(
+                    f"Stat '{name}' not found and no expression provided for calculation."
+                )
+
             self.ctx.logger.info(f"[LAZY STAT] Calculating {name} for {self.symbol}...")
             self._df = self._df.with_columns(expr.alias(name))
 
