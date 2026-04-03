@@ -2,7 +2,9 @@ from abc import ABC, abstractmethod
 from logging import Logger
 from polars import DataFrame
 
-from .instrument import BaseSpec
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .instrument import BaseSpec
 from .context import Context
 from .logger import NO_LOGGER
 
@@ -12,7 +14,7 @@ class BaseLoader(ABC):
     Base class for all loaders.
     """
 
-    def __init__(self, spec: BaseSpec, ctx: Context):
+    def __init__(self, spec: "BaseSpec", ctx: Context):
         """
         Initialize the loader.
 

@@ -5,23 +5,55 @@ from .logger import NO_LOGGER
 class Portfolio:
     """ Tracks positions and cash for the backtest. """
     def __init__(self, initial_cash: float = 100_000.0, ctx: Any = None):
+        """
+        Initialize the portfolio.
+
+        Args:
+            initial_cash: Starting cash balance for the portfolio. Defaults to 100,000.0.
+            ctx: The shared configuration context.
+        """
         self.ctx = ctx
         self._initial_cash = initial_cash
         self._cash = initial_cash
         self._positions: Dict[str, float] = {}
 
     def logger(self):
+        """ Get the shared logger from context or use a fallback. """
         return getattr(self.ctx, "logger", NO_LOGGER)
 
     @property
     def cash(self) -> float:
+        """ 
+        The current available cash in the portfolio.
+        
+        Returns:
+            Current cash balance.
+        """
         return self._cash
 
     def get_quantity(self, symbol: str) -> float:
+        """
+        Get the current holding quantity of a specific instrument.
+
+        Args:
+            symbol: The instrument symbol.
+
+        Returns:
+            Current positional quantity, or 0.0 if not held.
+        """
         return self._positions.get(symbol, 0.0)
 
     def set_position(self, instr: BaseInstrument, target_quantity: float):
-        """ Executes a trade at current price to reach target quantity. """
+        """ 
+        Executes trades at the current market price to reach the target positional quantity.
+
+        If the portfolio has insufficient cash to enter a position, it will block 
+        the trade and log a warning. Returns early if the target quantity is already reached.
+
+        Args:
+            instr: The instrument to trade.
+            target_quantity: The desired final quantity of the holding.
+        """
         symbol = instr.symbol
         current_qty = self.get_quantity(symbol)
         diff = target_quantity - current_qty
@@ -46,7 +78,16 @@ class Portfolio:
                             f"New Qty: {target_quantity}, Cash: {self._cash:.2f}")
 
     def get_equity(self, active_instruments: Dict[str, BaseInstrument]) -> float:
-        """ Calculates current net liquidation value. """
+        """ 
+        Calculates the current net liquidation value (Cash + Position Values).
+
+        Args:
+            active_instruments: A dictionary of instruments loaded in the current simulation, 
+                                containing the most recent pricing data.
+
+        Returns:
+            The total equity of the portfolio.
+        """
         holdings_value = 0.0
         for symbol, qty in self._positions.items():
             if qty != 0:

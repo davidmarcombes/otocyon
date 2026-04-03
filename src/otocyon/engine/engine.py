@@ -3,7 +3,21 @@ from typing import Optional, List
 
 
 class Engine:
+    """
+    The core execution engine of the Otocyon framework.
+
+    The Engine manages the entire simulation lifecycle, orchestrating the 
+    "Bucket Brigade" pipeline. It discovers strategies, collects market data,
+    computes global indicators, and executes trades across the portfolio.
+    """
+
     def __init__(self, ctx):
+        """
+        Initialize the Engine.
+
+        Args:
+            ctx: The shared context containing configuration and shared state.
+        """
         self.ctx = ctx
         self.instruments = self.ctx.instruments
         self.strategies = []
@@ -73,6 +87,11 @@ class Engine:
         # Initial setup: call each setup handler once
         for handler in self.setup_handlers:
             handler()
+
+        # Compile all requested declarative features across the universe
+        self.ctx.logger.info("Engine compiling declarative instrument features...")
+        for instr in self.instruments.values():
+            instr.compile_features()
 
     def run(self):
         """Executes the simulation loop using the 'Bucket Brigade' pipeline."""

@@ -16,9 +16,5 @@ class PolarsLoader(BaseLoader):
 
         return (
             polars.scan_parquet(path)
-            .with_columns([
-                # Calclate MA_5 as part of the load plan
-                polars.col("close").rolling_mean(window_size=5).alias("ma_5")
-            ])
             .collect()  # Materialize into RAM
         )

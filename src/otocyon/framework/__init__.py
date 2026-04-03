@@ -12,6 +12,7 @@ from .instruments.equity_instrument import EquitySpec, EquityInstrument
 from .instruments.swap_instrument import SwapSpec, SwapInstrument
 from .signal import Signal
 from .indicator import Indicator
+from . import features
 
 __all__ = [
     "REGISTRY",
@@ -35,4 +36,5 @@ __all__ = [
     "SwapInstrument",
     "Signal",
     "Indicator",
+    "features",
 ]

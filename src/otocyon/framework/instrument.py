@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 import polars as pl
 from typing import Any, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from .loader import BaseLoader
 from .context import Context
-
 
 @dataclass(frozen=True)
 class BaseSpec:
@@ -14,6 +13,7 @@ class BaseSpec:
 
     symbol: str
     asset_class: str
+    features: dict = field(default_factory=dict, kw_only=True, compare=False, hash=False)
 
 
 class BaseInstrument(ABC):
@@ -36,6 +36,38 @@ class BaseInstrument(ABC):
         self._df: Optional[pl.DataFrame] = None  # The "Real" data (initially empty)
         self.ctx = ctx
         self._cursor = 0
+        self._pending_features: dict[str, pl.Expr] = {}
+
+    def __getattr__(self, name: str) -> Any:
+        """
+        Dynamically fallback to DataFrame columns if an attribute isn't found on the class.
+        This provides clean access like self.btc.ma_5.
+        """
+        if self._df is None:
+            raise ValueError(f"Data not collected yet to read '{name}'.")
+        if name not in self._df.columns:
+            raise AttributeError(f"Instrument '{self.symbol}' has no attribute or feature '{name}'")
+        return self._df[name][self._cursor]
+
+    def add_features(self, features: dict):
+        """Registers a set of polars expressions to be evaluated during compile time."""
+        for name, expr in features.items():
+            if name not in self._pending_features:
+                self._pending_features[name] = expr
+
+    def compile_features(self):
+        """Executes all registered Polars expressions in a single rust-native pass."""
+        if not self._pending_features or self._df is None:
+            return
+
+        self.ctx.logger.info(f"Compiling {len(self._pending_features)} features for {self.symbol}...")
+        
+        # Batch all pending features into a single with_columns evaluation block
+        exprs = [expr.alias(name) for name, expr in self._pending_features.items()]
+        self._df = self._df.with_columns(exprs)
+        
+        # Clear them once calculated
+        self._pending_features.clear()
 
     def _collect(self):
         """Materializes the raw data through the loader."""

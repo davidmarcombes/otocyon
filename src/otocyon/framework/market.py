@@ -18,12 +18,23 @@ class MockLoader(BaseLoader):
         })
 
 class Market:
-    """A simple central authority for data loaders."""
+    """
+    A central authority for orchestrating data loaders across different asset classes.
+    """
     def __init__(self):
         self._loaders: Dict[str, BaseLoader] = {}
 
     def get_loader(self, spec: BaseSpec, ctx: Context) -> BaseLoader:
-        """Determines the best loader for the resource."""
+        """
+        Determines and returns the best data loader for a specific instrument resource.
+
+        Args:
+            spec: The instrument specification (e.g. CryptoSpec, EquitySpec).
+            ctx: The shared configuration context.
+
+        Returns:
+            An instantiated loader matching the asset class and data availability.
+        """
         import os
         from .loaders.PolarsLoader import PolarsLoader
         from .loaders.DuckDbLoader import DuckDBLoader

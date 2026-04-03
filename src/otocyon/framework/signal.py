@@ -5,6 +5,12 @@ import uuid
 
 @dataclass
 class Signal:
+    """
+    Represents an intent to trade or hold a position.
+
+    Signals are produced by strategies in the Brain Pass and executed by the Engine 
+    against the Portfolio in the Muscle Pass. They express targets natively as weights.
+    """
     symbol: str
     weight: float  # Target portfolio weight (e.g., 0.5 for 50%)
     side: str  # "LONG", "SHORT", "FLAT"

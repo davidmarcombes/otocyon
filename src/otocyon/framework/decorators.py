@@ -1,19 +1,38 @@
 import functools
 from typing import Type, List, Optional, Callable, Dict, Any, Union
 from .registry import REGISTRY
+from .instrument import BaseSpec
 
 
 def strategy(name: str, universe: Optional[Union[List[Any], Dict[str, Any]]] = None):
     """
     Class-level decorator to register a strategy.
-    Usage: @strategy("TrendFollower", universe={"btc": CryptoSpec(...)})
+
+    Args:
+        name: The unique string identifier for the strategy.
+        universe: A list or dictionary of instrument specifications the strategy requires.
+                  If a dict is provided, instruments will be automatically injected 
+                  as class properties.
     """
 
     def wrapper(cls: Type):
+        final_universe = {}
+        
+        # 1. Parse class-level assigned descriptors (e.g. btc = RegisterCrypto(...))
+        for attr_name, value in vars(cls).items():
+            if isinstance(value, BaseSpec):
+                final_universe[attr_name] = value
+
+        # 2. Merge explicitly provided universe (if any)
+        if isinstance(universe, dict):
+            final_universe.update(universe)
+        elif isinstance(universe, list):
+            final_universe = universe
+
         # Store the class and its metadata in both the global Registry and on the class itself
-        REGISTRY.add(name, cls, {"universe": universe or []})
+        REGISTRY.add(name, cls, {"universe": final_universe})
         cls._otocyon_name = name
-        cls._otocyon_universe = universe or []
+        cls._otocyon_universe = final_universe
         return cls
 
     return wrapper

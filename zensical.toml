@@ -6,6 +6,15 @@ docs_dir = "docs"
 [project.theme]
 variant = "modern" 
 
+[project.nav]
+nav = [
+    { "Home" = "index.md" },
+    { "Engine" = "engine.md" },
+    { "Framework" = "framework.md" },
+    { "Feature Library" = "features.md" },
+    { "Instruments" = "instruments.md" },
+]
+
 [project.plugins.mkdocstrings.handlers.python]
 # This tells the Python 'Griffe' collector to look in the src folder
 paths = ["src"]
