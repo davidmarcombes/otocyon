@@ -1,20 +1,13 @@
 import polars
 
 from ..loader import BaseLoader
-from ..instrument import BaseSpec
-from ..context import Context
+from ..schemas import CryptoSchema
 
 
 class PolarsLoader(BaseLoader):
-    def __init__(self, spec: BaseSpec, ctx: Context):
-        super().__init__(spec, ctx)
-    
     def load(self) -> polars.DataFrame:
-        # Determine file path based on asset class and symbol
         path = f"{self.ctx.data_root}/{self.spec.asset_class}/{self.spec.symbol}.parquet"
-        self.logger().debug(f"Polars scanning: {path}")
+        self.logger().bind(symbol=self.spec.symbol, path=path).debug("loader.polars.scan")
 
-        return (
-            polars.scan_parquet(path)
-            .collect()  # Materialize into RAM
-        )
+        df = polars.scan_parquet(path).collect()
+        return CryptoSchema.validate(df)

@@ -1,20 +1,33 @@
-from abc import ABC, abstractmethod
-from logging import Logger
-from polars import DataFrame
+from typing import Any, Protocol, runtime_checkable
 
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from .instrument import BaseSpec
+from polars import DataFrame
+from structlog.stdlib import BoundLogger
+
 from .context import Context
 from .logger import NO_LOGGER
 
 
-class BaseLoader(ABC):
+@runtime_checkable
+class LoaderProtocol(Protocol):
     """
-    Base class for all loaders.
+    Structural interface for any data loader.
+
+    Any class implementing ``load() -> DataFrame`` satisfies this protocol —
+    no inheritance required.
     """
 
-    def __init__(self, spec: "BaseSpec", ctx: Context):
+    def load(self) -> DataFrame: ...
+
+
+class BaseLoader:
+    """
+    Concrete base providing shared ``__init__`` and ``logger`` utilities.
+
+    Subclass this for the shared implementation, but type-annotate parameters
+    with ``LoaderProtocol`` to remain open to structural duck-typed loaders.
+    """
+
+    def __init__(self, spec: Any, ctx: Context) -> None:
         """
         Initialize the loader.
 
@@ -25,21 +38,17 @@ class BaseLoader(ABC):
         self.spec = spec
         self.ctx = ctx
 
-    def logger(self) -> Logger:
-        """
-        Safely get logger from context
-        """
-        # We assume ctx has a logger or we use NO_LOGGER
+    def logger(self) -> BoundLogger:
+        """Safely get logger from context."""
         return self.ctx.logger if (self.ctx and self.ctx.logger) else NO_LOGGER
 
-    @abstractmethod
     def load(self) -> DataFrame:
         """
-        Fetch data into Polars DataFrame.
+        Fetch data into a Polars DataFrame.
 
         Todo: add parameters for time window
 
         Returns:
             DataFrame: The fetched data.
         """
-        pass
+        raise NotImplementedError

@@ -9,10 +9,12 @@ class EquitySpec(BaseSpec):
 
 
 class EquityInstrument(BaseInstrument):
-    def get_type(self):
+    def get_type(self) -> str:
         return "equity"
 
     @property
     def dividend(self) -> float:
         # Only Equities have a 'div' column in the Parquet
-        return self._df["div"][self._cursor]
+        if self._df is None:
+            raise ValueError("Data not collected yet.")
+        return float(self._df["div"][self._cursor])

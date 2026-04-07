@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
-from ..instrument import BaseInstrument, BaseSpec, BaseLoader
+from ..instrument import BaseInstrument, BaseSpec
+from ..loader import LoaderProtocol
 from ..context import Context
 
 
@@ -14,7 +15,7 @@ class SwapSpec(BaseSpec):
 
 
 class SwapInstrument(BaseInstrument):
-    def __init__(self, specs: SwapSpec, loader: Optional[BaseLoader], ctx: Context):
+    def __init__(self, specs: SwapSpec, loader: Optional[LoaderProtocol], ctx: Context):
         super().__init__(specs, loader, ctx)
         self.specs = specs
 

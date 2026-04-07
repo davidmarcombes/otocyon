@@ -1,7 +1,6 @@
 import polars as pl
-from typing import Dict
 from .loader import BaseLoader
-from .instrument import BaseSpec
+from .instrument import SpecProtocol
 from .context import Context
 
 class MockLoader(BaseLoader):
@@ -21,10 +20,10 @@ class Market:
     """
     A central authority for orchestrating data loaders across different asset classes.
     """
-    def __init__(self):
-        self._loaders: Dict[str, BaseLoader] = {}
+    def __init__(self) -> None:
+        self._loaders: dict[str, BaseLoader] = {}
 
-    def get_loader(self, spec: BaseSpec, ctx: Context) -> BaseLoader:
+    def get_loader(self, spec: SpecProtocol, ctx: Context) -> BaseLoader:
         """
         Determines and returns the best data loader for a specific instrument resource.
 

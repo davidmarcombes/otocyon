@@ -2,18 +2,18 @@
 site_name = "Otocyon"
 site_url = "https://marcombes.fr/otocyon"
 docs_dir = "docs"
-
-[project.theme]
-variant = "modern" 
-
-[project.nav]
 nav = [
     { "Home" = "index.md" },
+    { "Libraries and Design" = "libraries.md" },
     { "Engine" = "engine.md" },
     { "Framework" = "framework.md" },
     { "Feature Library" = "features.md" },
     { "Instruments" = "instruments.md" },
+    { "Python Techniques" = "python_techniques.md" },
 ]
+
+[project.theme]
+variant = "modern"
 
 [project.plugins.mkdocstrings.handlers.python]
 # This tells the Python 'Griffe' collector to look in the src folder

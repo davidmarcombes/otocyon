@@ -1,4 +1,6 @@
 from otocyon.framework import REGISTRY, strategy
+from otocyon.framework.context import Context
+
 
 def test_strategy_registration():
     # 1. Define a dummy strategy
@@ -12,6 +14,7 @@ def test_strategy_registration():
     assert reg["TestAlpha"]["universe"] == ["AAPL", "MSFT"]
     assert reg["TestAlpha"]["class"] == MockStrategy
 
+
 def test_registry_overwrite():
     @strategy("OverwriteMe")
     class Version1:
@@ -24,11 +27,9 @@ def test_registry_overwrite():
     reg = REGISTRY.get_all()
     assert reg["OverwriteMe"]["class"].version == 2
 
-def test_registry_initialization():
-    import logging
-    from otocyon.framework.context import Context
-    
-    ctx = Context(logger=logging.getLogger("test"), data_root="/tmp")
+
+def test_registry_initialization(logger):
+    ctx = Context(logger=logger, data_root="/tmp")
     REGISTRY.initialize(ctx)
-    
+
     assert REGISTRY.ctx == ctx

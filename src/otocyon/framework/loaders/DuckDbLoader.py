@@ -1,21 +1,19 @@
 import polars
+
 from ..loader import BaseLoader
-from ..instrument import BaseSpec
-from ..context import Context
+from ..schemas import EquitySchema
 
 
 class DuckDBLoader(BaseLoader):
-    def __init__(self, spec: BaseSpec, ctx: Context):
-        super().__init__(spec, ctx)
-
     def load(self) -> polars.DataFrame:
         path = f"{self.ctx.data_root}/{self.spec.asset_class}/{self.spec.symbol}.parquet"
-        self.logger().debug(f"DuckDB scanning: {path}")
+        self.logger().bind(symbol=self.spec.symbol, path=path).debug("loader.duckdb.scan")
 
         # SQL calculation: daily returns via window function
         query = """
-            SELECT *, 
+            SELECT *,
                    (close - lag(close) OVER (ORDER BY timestamp)) / lag(close) OVER (ORDER BY timestamp) as returns
             FROM read_parquet(?)
         """
-        return self.ctx.duckdb_connection.execute(query, [path]).pl()
+        df = self.ctx.duckdb_connection.execute(query, [path]).pl()
+        return EquitySchema.validate(df)

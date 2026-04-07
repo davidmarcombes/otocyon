@@ -16,8 +16,5 @@ class CryptoInstrument(BaseInstrument):
     Instrument for a crypto asset.
     """
 
-    def get_type(self):
-        """
-        Returns the type of the instrument.
-        """
+    def get_type(self) -> str:
         return "crypto"

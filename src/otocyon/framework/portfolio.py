@@ -1,4 +1,6 @@
-from typing import Dict, Any
+from typing import Any
+
+from structlog.stdlib import BoundLogger
 from .instrument import BaseInstrument
 from .logger import NO_LOGGER
 
@@ -15,9 +17,9 @@ class Portfolio:
         self.ctx = ctx
         self._initial_cash = initial_cash
         self._cash = initial_cash
-        self._positions: Dict[str, float] = {}
+        self._positions: dict[str, float] = {}
 
-    def logger(self):
+    def logger(self) -> BoundLogger:
         """ Get the shared logger from context or use a fallback. """
         return getattr(self.ctx, "logger", NO_LOGGER)
 
@@ -43,7 +45,7 @@ class Portfolio:
         """
         return self._positions.get(symbol, 0.0)
 
-    def set_position(self, instr: BaseInstrument, target_quantity: float):
+    def set_position(self, instr: BaseInstrument, target_quantity: float) -> None:
         """ 
         Executes trades at the current market price to reach the target positional quantity.
 
@@ -77,7 +79,7 @@ class Portfolio:
         self.logger().info(f"[PORTFOLIO] {direction} {abs(diff)} {symbol} @ {price:.2f}. "
                             f"New Qty: {target_quantity}, Cash: {self._cash:.2f}")
 
-    def get_equity(self, active_instruments: Dict[str, BaseInstrument]) -> float:
+    def get_equity(self, active_instruments: dict[str, BaseInstrument]) -> float:
         """ 
         Calculates the current net liquidation value (Cash + Position Values).
 

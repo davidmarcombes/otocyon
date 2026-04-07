@@ -1,4 +1,3 @@
-import pytest
 from otocyon.framework.portfolio import Portfolio
 from otocyon.framework.instrument import BaseInstrument, BaseSpec
 

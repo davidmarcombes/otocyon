@@ -1,11 +1,10 @@
-import logging
 from .engine import Engine
-from .strategies.btc_eth_trend import TrendFollower
+from .strategies.btc_eth_trend import TrendFollower  # noqa: F401 — registers strategy on import
 from .framework import Context
+from .framework.logger import configure_logging, get_logger
 
-# Simple logging setup
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-logger = logging.getLogger("otocyon")
+configure_logging()
+logger = get_logger("otocyon.runner")
 
 with Context(logger=logger) as ctx:
     engine = Engine(ctx)

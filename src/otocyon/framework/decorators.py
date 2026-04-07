@@ -1,33 +1,40 @@
 import functools
-from typing import Type, List, Optional, Callable, Dict, Any, Union
+from typing import Any, Callable, Type
+
+from beartype import beartype
+
 from .registry import REGISTRY
 from .instrument import BaseSpec
 
 
-def strategy(name: str, universe: Optional[Union[List[Any], Dict[str, Any]]] = None):
+def strategy(name: str, universe: list[Any] | dict[str, Any] | None = None) -> Callable[[Type[Any]], Type[Any]]:
     """
     Class-level decorator to register a strategy.
 
     Args:
         name: The unique string identifier for the strategy.
         universe: A list or dictionary of instrument specifications the strategy requires.
-                  If a dict is provided, instruments will be automatically injected 
+                  If a dict is provided, instruments will be automatically injected
                   as class properties.
     """
 
-    def wrapper(cls: Type):
-        final_universe = {}
-        
-        # 1. Parse class-level assigned descriptors (e.g. btc = RegisterCrypto(...))
+    def wrapper(cls: Type[Any]) -> Type[Any]:
+        dict_universe: dict[str, Any] = {}
+
+        # 1. Parse class-level assigned descriptors (e.g. btc = CryptoSpec(...))
         for attr_name, value in vars(cls).items():
             if isinstance(value, BaseSpec):
-                final_universe[attr_name] = value
+                dict_universe[attr_name] = value
 
         # 2. Merge explicitly provided universe (if any)
+        final_universe: list[Any] | dict[str, Any]
         if isinstance(universe, dict):
-            final_universe.update(universe)
+            dict_universe.update(universe)
+            final_universe = dict_universe
         elif isinstance(universe, list):
             final_universe = universe
+        else:
+            final_universe = dict_universe
 
         # Store the class and its metadata in both the global Registry and on the class itself
         REGISTRY.add(name, cls, {"universe": final_universe})
@@ -38,57 +45,59 @@ def strategy(name: str, universe: Optional[Union[List[Any], Dict[str, Any]]] = N
     return wrapper
 
 
-def on_setup():
+def on_setup() -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Method-level decorator to tag setup handlers.
     Usage: @on_setup()
     """
 
-    def decorator(func: Callable):
-        func._is_setup_handler = True  # type: ignore
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        func._is_setup_handler = True  # type: ignore[attr-defined]
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
+        @functools.wraps(func)  # copies __dict__ (incl. _is_setup_handler) onto wrapper
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            return beartype(func)(*args, **kwargs)
 
         return wrapper
 
     return decorator
 
 
-def on_data(frequency: str = "1d"):
+def on_data(frequency: str = "1d") -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Method-level decorator to tag data handlers.
     Usage: @on_data(frequency="1h")
     """
 
-    def decorator(func: Callable):
-        # We attach attributes to the function object itself
-        func._is_data_handler = True  # type: ignore
-        func._frequency = frequency  # type: ignore
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        func._is_data_handler = True  # type: ignore[attr-defined]
+        func._frequency = frequency  # type: ignore[attr-defined]
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
+        checked_func = beartype(func)
+
+        @functools.wraps(func)  # copies __dict__ (incl. _is_data_handler) onto wrapper
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            return checked_func(*args, **kwargs)
 
         return wrapper
 
     return decorator
 
 
-def on_indicator():
+def on_indicator() -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Method-level decorator to tag indicator handlers.
     Usage: @on_indicator()
     """
 
-    def decorator(func: Callable):
-        # We attach attributes to the function object itself
-        func._is_indicator_handler = True  # type: ignore
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        func._is_indicator_handler = True  # type: ignore[attr-defined]
 
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
+        checked_func = beartype(func)
+
+        @functools.wraps(func)  # copies __dict__ (incl. _is_indicator_handler) onto wrapper
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            return checked_func(*args, **kwargs)
 
         return wrapper
 

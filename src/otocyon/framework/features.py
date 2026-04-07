@@ -34,6 +34,7 @@ import polars as pl
 # Reference a column that already exists in the loaded file / query result.
 # ---------------------------------------------------------------------------
 
+
 def col(name: str) -> pl.Expr:
     """
     Reference a feature column that is already present in the loaded data.
@@ -65,6 +66,7 @@ def col(name: str) -> pl.Expr:
 # Category 2 – Predefined Routines
 # Common technical-analysis building blocks.
 # ---------------------------------------------------------------------------
+
 
 def sma(source: str = "close", window: int = 20) -> pl.Expr:
     """
@@ -106,7 +108,8 @@ def volatility(source: str = "close", window: int = 20) -> pl.Expr:
         Polars expression for annualised vol.
     """
     log_ret = (pl.col(source) / pl.col(source).shift(1)).log(base=2.718281828)
-    return log_ret.rolling_std(window_size=window) * (252 ** 0.5)
+    annualised: pl.Expr = log_ret.rolling_std(window_size=window) * (252**0.5)
+    return annualised
 
 
 def returns(source: str = "close", periods: int = 1) -> pl.Expr:
@@ -200,7 +203,9 @@ def bollinger_lower(source: str = "close", window: int = 20, k: float = 2.0) -> 
     return sma(source, window) - k * pl.col(source).rolling_std(window_size=window)
 
 
-def vwap(price_col: str = "close", volume_col: str = "volume", window: int = 20) -> pl.Expr:
+def vwap(
+    price_col: str = "close", volume_col: str = "volume", window: int = 20
+) -> pl.Expr:
     """
     Rolling Volume-Weighted Average Price.
 
@@ -213,7 +218,9 @@ def vwap(price_col: str = "close", volume_col: str = "volume", window: int = 20)
         Polars expression for rolling VWAP.
     """
     pv = pl.col(price_col) * pl.col(volume_col)
-    return pv.rolling_mean(window_size=window) / pl.col(volume_col).rolling_mean(window_size=window)
+    return pv.rolling_mean(window_size=window) / pl.col(volume_col).rolling_mean(
+        window_size=window
+    )
 
 
 def z_score(source: str = "close", window: int = 20) -> pl.Expr:

@@ -1,8 +1,8 @@
 # Feature Library
 
-The `features` module provides a structured vocabulary for declaring what data a strategy
-needs from each instrument. It enforces a clean separation between **where** data comes
-from and **how** it is consumed.
+The `features` module provides expressions for declaring what data a strategy
+needs from each instrument. Features are declared in the instrument spec and compiled
+before the simulation loop runs.
 
 Import it alongside your specs:
 
@@ -133,6 +133,4 @@ def handle_market_data(self):
     ]
 ```
 
-> [!NOTE]
-> `self.aapl.ma_20` is a **row-level scalar** (a Python float), not a Series. The cursor
-> is advanced by the Engine on every time step so the value is always "current".
+`self.aapl.ma_20` returns a Python scalar, not a Series. The engine advances the instrument cursor on each bar, so the value is always the current bar's value.
