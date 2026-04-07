@@ -11,35 +11,54 @@ Strategies are declared as Python classes. The `@strategy` decorator registers a
 ## Example
 
 ```python
+import polars as pl
+from typing import Any, Generator
 from otocyon.framework import (
     strategy, on_data, on_indicator,
-    CryptoSpec, Indicator, Signal,
+    CryptoSpec, EquitySpec,
+    CryptoInstrument, EquityInstrument,
+    Indicator, Signal, features,
 )
 
-@strategy(
-    "BTC-ETH-Trend",
-    universe={
-        "btc": CryptoSpec(symbol="BTC-USDT"),
-        "eth": CryptoSpec(symbol="ETH-USDT"),
-    },
-)
-class BtcEthTrend:
-    def __init__(self, ctx):
+@strategy("BTC-ETH-TrendFollower")
+class TrendFollower:
+    # Universe: instruments and their pre-compiled feature expressions
+    aapl: EquityInstrument = EquitySpec(  # type: ignore[assignment]
+        symbol="AAPL",
+        features={
+            "ma_20": features.col("ma_20"),   # column pre-calculated on disk
+            "vol_20": features.col("vol_20"),
+        },
+    )
+    btc: CryptoInstrument = CryptoSpec(  # type: ignore[assignment]
+        symbol="BTC-USDT",
+        features={
+            "ma_5":   features.sma("close", 5),
+            "rsi_14": features.rsi("close", 14),
+        },
+    )
+    eth: CryptoInstrument = CryptoSpec(  # type: ignore[assignment]
+        symbol="ETH-USDT",
+        features={
+            "mom":       features.momentum("close", 1),
+            "vol_ratio": pl.col("close").rolling_std(window_size=5)
+                         / pl.col("close").rolling_std(window_size=20),
+        },
+    )
+
+    def __init__(self, ctx: Any) -> None:
         self.ctx = ctx
 
     @on_data()
-    def on_data(self):
+    def handle_market_data(self) -> Any:
         yield [
-            Indicator("BTC-Price", self.btc.price, "BTC-USDT"),
-            Indicator("ETH-Price", self.eth.price, "ETH-USDT"),
+            Indicator("BTC-RSI14", self.btc.rsi_14, "BTC-USDT"),
+            Indicator("ETH-Mom",   self.eth.mom,    "ETH-USDT"),
         ]
 
     @on_indicator()
-    def on_indicator(self, indicators):
-        btc = indicators["BTC-Price"]
-        eth = indicators["ETH-Price"]
-
-        if btc.value > eth.value * 30:
+    def handle_indicator(self, indicators: dict[str, Indicator]) -> Generator[Signal, None, None]:
+        if indicators["BTC-RSI14"].value < 40 and indicators["ETH-Mom"].value > 1.0:
             yield Signal("BTC-USDT", weight=1.0, side="LONG")
         else:
             yield Signal("ETH-USDT", weight=1.0, side="LONG")
@@ -68,19 +87,19 @@ uv sync
 The framework expects parquet files under `data/{asset_class}/{symbol}.parquet`. The `generate-data` command creates synthetic data for the default universe (BTC-USDT, ETH-USDT, AAPL, MSFT):
 
 ```bash
-uv run python -m otocyon.cli generate-data
+uv run otocyon generate-data
 ```
 
 By default this writes to `data/` with 100 bars per symbol. To change either:
 
 ```bash
-uv run python -m otocyon.cli generate-data --output-dir data --bars 500
+uv run otocyon generate-data --output-dir data --bars 500
 ```
 
 ### List registered strategies
 
 ```bash
-uv run python -m otocyon.cli strategies
+uv run otocyon strategies
 ```
 
 ### Run a backtest
@@ -88,19 +107,19 @@ uv run python -m otocyon.cli strategies
 Run all registered strategies against the data in `data/`:
 
 ```bash
-uv run python -m otocyon.cli run
+uv run otocyon run
 ```
 
 Run a specific strategy by name:
 
 ```bash
-uv run python -m otocyon.cli run --strategy BTC-ETH-TrendFollower
+uv run otocyon run --strategy BTC-ETH-TrendFollower
 ```
 
 Enable debug-level log output:
 
 ```bash
-uv run python -m otocyon.cli run --verbose
+uv run otocyon run --verbose
 ```
 
 ### Serve the documentation
